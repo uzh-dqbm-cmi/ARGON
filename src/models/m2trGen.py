@@ -6,10 +6,10 @@ import pytorch_lightning as pl
 from nltk.translate.bleu_score import sentence_bleu
 import json
 
-from modules.visual_extractor import VisualExtractorDenseNet121 as VisualExtractor
-from modules.meshed_memory_encoder_decoder import EncoderDecoder
-from modules.optimizers import build_optimizer, build_lr_scheduler
-from modules.metrics import compute_scores
+from src.modules.visual_extractor import VisualExtractorDenseNet121 as VisualExtractor
+from src.modules.meshed_memory_encoder_decoder import EncoderDecoder
+from src.modules.optimizers import build_optimizer, build_lr_scheduler
+from src.modules.metrics import compute_scores
 
 
 class M2TrGenModel(pl.LightningModule):

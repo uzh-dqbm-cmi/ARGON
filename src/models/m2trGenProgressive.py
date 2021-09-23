@@ -6,11 +6,11 @@ import pytorch_lightning as pl
 from nltk.translate.bleu_score import sentence_bleu
 import json
 
-from modules.visual_extractor import VisualExtractorDenseNet121 as VisualExtractor
-from modules.meshed_memory_encoder_decoder import EncoderDecoder
+from src.modules.visual_extractor import VisualExtractorDenseNet121 as VisualExtractor
+from src.modules.meshed_memory_encoder_decoder import EncoderDecoder
 from transformers import  BartForConditionalGeneration
-from modules.optimizers import build_optimizer, build_lr_scheduler,build_optimizer_t2t
-from modules.metrics import compute_scores
+from src.modules.optimizers import build_optimizer, build_lr_scheduler,build_optimizer_t2t
+from src.modules.metrics import compute_scores
 
 
 class M2TrGenModelProgressive(pl.LightningModule):

@@ -27,7 +27,7 @@ class pltrain():
         self.trainer = pl.Trainer(
             #gradient_clip_val=0.1,
             max_epochs=args.epochs, deterministic=True,
-            gpus=None,
+            gpus=args.n_gpu,
             plugins=DDPPlugin(find_unused_parameters=False),
             callbacks=[EarlyStopping(monitor="monitor_metrics", mode="max", patience=args.early_stop, verbose=True), self.checkpoint_callback]
         )
