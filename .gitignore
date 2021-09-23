@@ -146,3 +146,11 @@ data/mimic_cxr/
 
 # results
 results/
+records/
+lightning_logs/
+cicd/
+requirements/
+wandb/
+models/wandb
+modules/wandb
+

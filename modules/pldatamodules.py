@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 
 from .datasets import (
     IuxrayMultiImageDataset,
+    IuxrayDatasetProgressive
     )
 
 image_pipeline = transforms.Compose([
@@ -77,7 +78,7 @@ def transform_image_ifcc(split, args=None):
         )
     )
 
-class DataModule(pl.LightningDataModule):
+class plDataModule(pl.LightningDataModule):
     def __init__(self, args, tokenizer):
         super().__init__()
         self.args = args
@@ -86,7 +87,7 @@ class DataModule(pl.LightningDataModule):
         self.num_workers = args.num_workers
         self.tokenizer = tokenizer
         # self.transform=image_pipeline # if the extractor is freez
-        self.N = None
+        self.N = args.N
 
     def setup(self, stage=None):
         # Define steps that should be done on
@@ -122,3 +123,67 @@ class DataModule(pl.LightningDataModule):
             targets_masks[i, :len(report_masks)] = report_masks
 
         return torch.LongTensor(images_id), images, torch.LongTensor(targets), torch.FloatTensor(targets_masks)
+
+class plDataModuleProgressive(pl.LightningDataModule):
+    def __init__(self, args, image2text_tokenizer, tokenizer):
+        super().__init__()
+        self.args = args
+        #self.dataset_name = args.dataset_name
+        self.batch_size = args.batch_size
+        self.num_workers = args.num_workers
+        self.image2text_tokenizer = image2text_tokenizer
+        self.text2text_tokenizer = tokenizer
+        # self.transform=image_pipeline # if the extractor is freez
+        self.N = args.N
+
+    def setup(self, stage=None):
+        # Define steps that should be done on
+        # every GPU, like splitting data, applying
+        # transform etc.
+        self.train= IuxrayDatasetProgressive(self.args, self.image2text_tokenizer, 'train', transform=transform_image_ifcc('train', self.args),
+                                            limit_length=self.N)
+        self.validation = IuxrayDatasetProgressive(self.args, self.image2text_tokenizer, 'val', transform=transform_image_ifcc('val', self.args),
+                                                  limit_length=self.N)
+        self.test = IuxrayDatasetProgressive(self.args, self.image2text_tokenizer, 'test', transform=transform_image_ifcc('test', self.args),
+                                            limit_length=self.N)
+
+    def train_dataloader(self):
+        return DataLoader(self.train, collate_fn=self.collate_fn, batch_size=self.batch_size, shuffle=True),
+
+
+    def val_dataloader(self):
+        return DataLoader(self.validation, collate_fn=self.collate_fn, batch_size=self.batch_size)
+
+    def test_dataloader(self):
+        return DataLoader(self.test, collate_fn=self.collate_fn, batch_size=self.batch_size)
+
+    def collate_fn(self, data):
+        images_id, images, reports_ids, reports_masks, seq_lengths, input_bart, decoder_input_bart, label_bart = zip(*data)
+
+        images = torch.stack(images, 0)
+        max_seq_length = max(seq_lengths)
+
+        targets = np.zeros((len(reports_ids), max_seq_length), dtype=int)
+        targets_masks = np.zeros((len(reports_ids), max_seq_length), dtype=int)
+
+        for i, report_ids in enumerate(reports_ids):
+            targets[i, :len(report_ids)] = report_ids
+
+        for i, report_masks in enumerate(reports_masks):
+            targets_masks[i, :len(report_masks)] = report_masks
+
+        target_encodings_bart = self.text2text_tokenizer.batch_encode_plus(label_bart, return_tensors="pt",
+                                                                      pad_to_max_length=True,
+                                                                      max_length=self.args.tgt_max_seq_length,
+                                                                      truncation=True, add_special_tokens=False)
+        decoder_input_ids_bart = self.text2text_tokenizer.batch_encode_plus(decoder_input_bart, return_tensors="pt",
+                                                                       pad_to_max_length=True,
+                                                                       max_length=self.args.tgt_max_seq_length,
+                                                                       truncation=True, add_special_tokens=False)
+
+
+        labels_bart = target_encodings_bart['input_ids']
+        labels_bart[labels_bart[:, :] == self.text2text_tokenizer.pad_token_id] = -100
+        decoder_inputs_ids_bart = decoder_input_ids_bart['input_ids']
+
+        return torch.LongTensor(images_id), images, torch.LongTensor(targets), torch.FloatTensor(targets_masks), input_bart, decoder_inputs_ids_bart, labels_bart

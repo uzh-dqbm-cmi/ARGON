@@ -389,7 +389,6 @@ class Tokenizer_w2vEmb(object):
                     new_tokens.append(NUMBER_TOKEN)
         return new_tokens
 
-
 class SentenceTokenizer(object):
     def __init__(self, args):
         self.args = args

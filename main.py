@@ -2,25 +2,23 @@ import torch
 import argparse
 import numpy as np
 from modules.tokenizers import Tokenizer, SentenceTokenizer, Tokenizer_w2vEmb
-from modules.dataloaders import R2DataLoader
-from modules.metrics import compute_scores
-from modules.optimizers import build_optimizer, build_lr_scheduler
-from modules.trainer import Trainer
+from modules.pldatamodules import plDataModule
+from modules.pltrainer import pltrain
 from modules.loss import compute_loss
-from models.r2gen import  R2GenModel, R2GenModelPSA
+from models.m2trGen import  M2TrGenModel
 
 def parse_agrs():
 
     parser = argparse.ArgumentParser()
     # Data input settings
     parser.add_argument('--image_dir', type=str, default='data/iu_xray/images/', help='the path to the directory containing the data.')
-    parser.add_argument('--ann_path', type=str, default='data/iu_xray/annotation.json', help='the path to the directory containing the data.')
+    parser.add_argument('--ann_path', type=str, default='data/iu_xray/new_annotation.json', help='the path to the directory containing the data.')
     parser.add_argument('--vocab_path', type=str, default='data/iu_xray/vocab.pickle', help='the path to the directory containing the data.')
-    parser.add_argument('--ann_path_tokenizer', type=str, default='data/mimic_cxr/new_annotation.json',
+    parser.add_argument('--ann_path_tokenizer', type=str, default='data/iu_xray/new_annotation.json',
                         help='the path to the directory containing the data.')
 
     # Data loader settings
-    parser.add_argument('--dataset_name', type=str, default='mimic-cxr', choices=['iu_xray', 'mimic_cxr'], help='the dataset to be used.')
+    parser.add_argument('--dataset_name', type=str, default='iu_xray', choices=['iu_xray', 'mimic_cxr'], help='the dataset to be used.')
     parser.add_argument('--folds', type=str, help='', default="")
     parser.add_argument('--val_fold', type=str, help='', default="")
     parser.add_argument('--test_fold', type=str, help='', default="")
@@ -80,9 +78,9 @@ def parse_agrs():
     parser.add_argument('--do_test', default=False, action='store_true')
 
     parser.add_argument('--n_gpu', type=int, default=1, help='the number of gpus to be used.')
-    parser.add_argument('--epochs', type=int, default=100, help='the number of training epochs.')
+    parser.add_argument('--epochs', type=int, default=2, help='the number of training epochs.')
     parser.add_argument('--save_dir', type=str, default='results/iu_xray', help='the patch to save the models.')
-    parser.add_argument('--record_dir', type=str, default='records/', help='the patch to save the results of experiments')
+    parser.add_argument('--record_dir', type=str, default='records/iu_xray', help='the patch to save the results of experiments')
     parser.add_argument('--save_period', type=int, default=1, help='the saving period.')
     parser.add_argument('--monitor_mode', type=str, default='max', choices=['min', 'max'], help='whether to max or min the metric.')
     parser.add_argument('--monitor_metric', type=str, default='BLEU_4', help='the metric to be monitored.')
@@ -105,6 +103,7 @@ def parse_agrs():
     parser.add_argument('--resume', type=str, help='whether to resume the training from existing checkpoints.')
 
     parser.add_argument('--distributed', type=bool, default=False, help='')
+    parser.add_argument('--N', type=int, help='number of samples for testing')
 
 
     args = parser.parse_args()
@@ -117,8 +116,6 @@ def parse_agrs():
 def main():
     # parse arguments
     args = parse_agrs()
-
-
     # fix random seeds
     torch.manual_seed(args.seed)
     torch.backends.cudnn.deterministic = True
@@ -129,25 +126,23 @@ def main():
     tokenizer = Tokenizer(args)
 
     # create data loader
-    train_dataloader = R2DataLoader(args, tokenizer, split='train', shuffle=True)
-    val_dataloader = R2DataLoader(args, tokenizer, split='val', shuffle=False)
-    test_dataloader = R2DataLoader(args, tokenizer, split='test', shuffle=False)
-
+    pl_data_module=plDataModule(args,tokenizer)
+    pl_data_module.setup()
 
     # build model architecture
-    model = R2GenModel(args, tokenizer)
-
     # get function handles of loss and metrics
     criterion = compute_loss
-    metrics = compute_scores
+    model = M2TrGenModel(args, tokenizer, criterion)
 
-    # build optimizer, learning rate scheduler
-    optimizer = build_optimizer(args, model)
-    lr_scheduler = build_lr_scheduler(args, optimizer)
 
     # build trainer and start to train
-    trainer = Trainer(model, criterion, metrics, optimizer, args, lr_scheduler, train_dataloader, val_dataloader, test_dataloader)
-    trainer.train()
+
+    trainer = pltrain(model, args, data_module=pl_data_module)
+    trainer.fit()
+
+    print("==> Evaluating")
+    trainer.checkpoint_callback.best_model_path
+    trainer.evaluate()
 
 
 if __name__ == '__main__':

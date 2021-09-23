@@ -12,13 +12,14 @@ from modules.optimizers import build_optimizer, build_lr_scheduler
 from modules.metrics import compute_scores
 
 
-class M2TrModel(pl.LightningModule):
+class M2TrGenModel(pl.LightningModule):
     def __init__(self, args, tokenizer, criterion):
-        super(M2TrModel, self).__init__()
+        super(M2TrGenModel, self).__init__()
         self.save_hyperparameters()
 
+
         self.args = args
-        self.checkpoint_dir = args.save_dir
+        self.record_dir = args.record_dir
         self.args.max_seq_length = args.src_max_seq_length
         self.tokenizer = tokenizer
         self.visual_extractor = VisualExtractor(args)
@@ -52,7 +53,6 @@ class M2TrModel(pl.LightningModule):
         # build optimizer, learning rate scheduler
         optimizer=build_optimizer(self.args,self.encoder_decoder,self.visual_extractor)
         sch = build_lr_scheduler(self.args, optimizer)
-
         return {"optimizer": optimizer,
                 "lr_scheduler" : {
                 "scheduler" : sch,
@@ -110,10 +110,17 @@ class M2TrModel(pl.LightningModule):
 
 
         monitor_metrics=val_met[self.args.monitor_metric]
-        self.log('monitor_metrics', monitor_metrics, on_step=False, on_epoch=True)
+        # print logged informations to the screen
+        print("")
+        print('\tval_{:15s}: {}'.format(str("epoch"), self.current_epoch))
+        for key, value in val_met.items():
+            print('\tval_{:15s}: {}'.format(str(key), value))
+
+        self.log('monitor_metrics', monitor_metrics, on_step=False, on_epoch=True, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
-        images_id, images, reports_ids, reports_masks=batch
+        images_id, images, reports_ids, reports_masks = batch
+
         images, reports_ids, reports_masks = images.to(self.device), reports_ids.to(self.device), reports_masks.to(
             self.device)
 
@@ -125,7 +132,7 @@ class M2TrModel(pl.LightningModule):
         output,_ = self.encoder_decoder(fc_feats, att_feats, mode='sample')
         reports = self.tokenizer.decode_batch(output.cpu().numpy())
         ground_truths = self.tokenizer.decode_batch(reports_ids[:, 1:].cpu().numpy())
-        return {"reports": reports, "gths": ground_truths,"images_id":images_id.cpu().numpy()}
+        return {"reports": reports, "gths": ground_truths,"image_ids":images_id.cpu().numpy()}
 
     def test_epoch_end(self, outputs):
         gths = []
@@ -138,21 +145,29 @@ class M2TrModel(pl.LightningModule):
             image_ids.extend(x["image_ids"])
         test_met = self.metric_ftns({i: [gt] for i, gt in enumerate(gths)},
                                    {i: [re] for i, re in enumerate(reports)})
+        # print logged informations to the screen
+        print("")
+        print('\ttest_{:15s}: {}'.format(str("epoch"), self.current_epoch))
+        for key, value in test_met.items():
+            print('\ttest_{:15s}: {}'.format(str(key), value))
+        self.output_generation(reports, gths, image_ids, self.current_epoch, 'test', self.record_dir,test_met)
 
-        self._output_generation(reports, gths, image_ids, self.current_epoch(), 'test', self.checkpoint_dir)
+    @staticmethod
+    def output_generation(predictions, gts, idxs, epoch, subset, record_dir,test_metrics):
+        # for evaluating and saving
 
+        # for saving json file
+        output = list()
 
-def _output_generation(predictions, gts, idxs, epoch, subset, checkpoint_dir):
-    # for evaluating and saving
+        for idx, pre, gt in zip(idxs, predictions, gts):
+            score = sentence_bleu([gt.split()], pre.split())
+            output.append({'filename': idx.item(), 'prediction': pre, 'ground_truth': gt, 'bleu4': score})
 
-    # for saving json file
-    output = list()
+        output = sorted(output, key=lambda x: x['bleu4'], reverse=True)
+        output_filename = os.path.join(record_dir, 'Enc2Dec-' + str(epoch) + '_' + subset + '_generated.json')
+        with open(output_filename, 'w') as f:
+            json.dump(output, f, ensure_ascii=False, indent=4)
 
-    for idx, pre, gt in zip(idxs, predictions, gts):
-        score = sentence_bleu([gt.split()], pre.split())
-        output.append({'filename': idx, 'prediction': pre, 'ground_truth': gt, 'bleu4': score})
-
-    output = sorted(output, key=lambda x: x['bleu4'], reverse=True)
-    output_filename = os.path.join(checkpoint_dir, 'Enc2Dec-' + str(epoch) + '_' + subset + '_generated.json')
-    with open(output_filename, 'w') as f:
-        json.dump(output, f, ensure_ascii=False, indent=4)
+        output_metrics_filename = os.path.join(record_dir, 'Enc2Dec-' + str(epoch) + '_' + subset + '_metrics.json')
+        with open(output_metrics_filename, 'w') as f:
+            json.dump(test_metrics, f, ensure_ascii=False, indent=4)

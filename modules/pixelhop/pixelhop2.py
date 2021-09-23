@@ -1,6 +1,6 @@
 # 2020.04.14
 import numpy as np
-from cwSaab import cwSaab
+from modules.pixelhop.cwSaab import cwSaab
 
 
 class Pixelhop2(cwSaab):

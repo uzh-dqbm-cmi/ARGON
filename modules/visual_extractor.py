@@ -16,7 +16,6 @@ class VisualExtractor(nn.Module):
         self.pretrained = args.visual_extractor_pretrained
         #/home/ubuntu/.cache/torch/checkpoints/resnet101-5d3b4d8f.pth
         self.cached_file = "/cluster/home/fnooralahzad/models/resnet101-5d3b4d8f.pth"
-
         if os.path.exists(self.cached_file):
             self.pretrained = False
         else:
@@ -95,15 +94,11 @@ class VisualExtractorDenseNet(nn.Module):
         patch_feats = patch_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)
         return patch_feats, avg_feats
 
-
-
 class VisualExtractorDenseNet121(nn.Module):
     def __init__(self, args):
         super(VisualExtractorDenseNet121, self).__init__()
         self.visual_extractor = 'densenet121'
         self.pretrained = args.visual_extractor_pretrained
-
-
         self.cached_file = "/cluster/home/fnooralahzad/models/chexpert_auc14.dict.gz"
         if os.path.exists(self.cached_file):
             self.pretrained = False
@@ -141,37 +136,5 @@ class VisualExtractorDenseNet121(nn.Module):
         batch_size, feat_size, _, _ = patch_feats.shape # torch.Size([16, 1024, 8, 8])
 
         patch_feats = patch_feats.reshape(batch_size, feat_size, -1).permute(0, 2, 1)#feature_sizetorch.Size([16, 64, 1024])
-
-        return patch_feats, avg_feats
-
-def pair(t):
-    return t if isinstance(t, tuple) else (t, t)
-
-from einops.layers.torch import Rearrange
-
-class VisualExtractorPatch(nn.Module):
-    def __init__(self, args):
-        super(VisualExtractorPatch, self).__init__()
-        image_height, image_width = pair(224)
-        patch_height, patch_width = pair(args.patch_size)
-
-        assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
-        channels = 3
-        num_patches = (image_height // patch_height) * (image_width // patch_width)
-        patch_dim = channels * patch_height * patch_width
-
-        self.to_patch_embedding = nn.Sequential(
-            Rearrange('b c (h p1) (w p2) -> b (h w) (p1 p2 c)', p1=patch_height, p2=patch_width),
-            nn.Linear(patch_dim, args.d_vf),
-        )
-
-        self.pos_embedding = nn.Parameter(torch.randn(1, num_patches, args.d_vf))
-
-    def forward(self, images):
-        x = self.to_patch_embedding(images)
-        b, n, _ = x.shape
-        x += self.pos_embedding[:, :n]
-        patch_feats = x
-        avg_feats = x.mean(dim = 1)
 
         return patch_feats, avg_feats
