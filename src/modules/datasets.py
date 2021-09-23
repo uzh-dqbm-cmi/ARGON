@@ -4,7 +4,7 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 import random
-import modules.utils as utils
+import src.modules.utils as utils
 import pickle
 
 

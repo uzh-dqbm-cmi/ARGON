@@ -1,14 +1,15 @@
 import torch
 import argparse
 import numpy as np
-import os, json
-from modules.tokenizers import Tokenizer
-from modules.metrics import compute_scores
-from modules.pltrainer import  pltrain
-from modules.loss import compute_loss
-from models.m2trGenProgressive import M2TrGenModelProgressive
+import os
+
 from transformers import BartTokenizer
-from modules.pldatamodules import plDataModuleProgressive
+
+from src.modules.tokenizers import Tokenizer
+from src.modules.pltrainer import  pltrain
+from src.modules.loss import compute_loss
+from src.models.m2trGenProgressive import M2TrGenModelProgressive
+from src.modules.pldatamodules import plDataModuleProgressive
 
 
 def parse_agrs():

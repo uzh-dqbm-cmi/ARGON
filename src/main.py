@@ -1,11 +1,11 @@
 import torch
 import argparse
 import numpy as np
-from modules.tokenizers import Tokenizer, SentenceTokenizer, Tokenizer_w2vEmb
-from modules.pldatamodules import plDataModule
-from modules.pltrainer import pltrain
-from modules.loss import compute_loss
-from models.m2trGen import  M2TrGenModel
+from src.modules.tokenizers import Tokenizer
+from src.modules.pldatamodules import plDataModule
+from src.modules.pltrainer import pltrain
+from src.modules.loss import compute_loss
+from src.models.m2trGen import  M2TrGenModel
 
 def parse_agrs():
 

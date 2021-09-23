@@ -1,9 +1,6 @@
 import torch
 import torch.nn as nn
-from torch import relu
 import torchvision.models as models
-from torch.nn.functional import adaptive_avg_pool2d
-from timm.models.resnet import resnet26d, resnet50d
 import gzip
 import os
 import logging

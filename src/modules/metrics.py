@@ -1,7 +1,7 @@
-from pycocoevalcap.bleu.bleu import Bleu
+from src.pycocoevalcap.bleu.bleu import Bleu
 #from pycocoevalcap.meteor import Meteor
-from pycocoevalcap.rouge import Rouge
-from pycocoevalcap.cider.cider import Cider
+from src.pycocoevalcap.rouge import Rouge
+from src.pycocoevalcap.cider.cider import Cider
 
 
 def compute_scores(gts, res):

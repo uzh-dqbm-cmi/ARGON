@@ -1,7 +1,7 @@
 import json
 import re,os
 from collections import Counter
-from transformers import AutoTokenizer, AutoModel, BertTokenizer
+from transformers import BertTokenizer
 import numpy as np
 class Tokenizer(object):
     def __init__(self, args):
