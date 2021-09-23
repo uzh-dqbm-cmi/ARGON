@@ -12,7 +12,7 @@ class VisualExtractor(nn.Module):
         self.visual_extractor = args.visual_extractor
         self.pretrained = args.visual_extractor_pretrained
         #/home/ubuntu/.cache/torch/checkpoints/resnet101-5d3b4d8f.pth
-        self.cached_file = "/opt/data/medinfmk/containers/models/resnet101-5d3b4d8f.pth"
+        self.cached_file = "/opt/data/ARGON/containers/models/resnet101-5d3b4d8f.pth"
         if os.path.exists(self.cached_file):
             self.pretrained = False
         else:
@@ -54,7 +54,7 @@ class VisualExtractorDenseNet(nn.Module):
         self.visual_extractor = 'densenet121'
         self.pretrained = args.visual_extractor_pretrained
 
-        self.cached_file = "/cluster/home/fnooralahzad/models/densenet121-a639ec97.pth"
+        self.cached_file = "/opt/data/ARGON/containers/models/densenet121-a639ec97.pth"
         if os.path.exists(self.cached_file):
             self.pretrained = False
         else:
@@ -93,7 +93,7 @@ class VisualExtractorDenseNet121(nn.Module):
         super(VisualExtractorDenseNet121, self).__init__()
         self.visual_extractor = 'densenet121'
         self.pretrained = args.visual_extractor_pretrained
-        self.cached_file = "/opt/data/medinfmk/containers/models/chexpert_auc14.dict.gz"
+        self.cached_file = "/opt/data/ARGON/containers/models/chexpert_auc14.dict.gz"
         if os.path.exists(self.cached_file):
             self.pretrained = False
         else:

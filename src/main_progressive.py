@@ -134,7 +134,7 @@ def main():
     # create tokenizer
     tokenizer = Tokenizer(args)
     ## bart tokenizer
-    model_name_or_path = os.path.join(f"/opt/data/medinfmk/containers/models/bart-base")
+    model_name_or_path = os.path.join(f"/opt/data/ARGON/containers/models/bart-base")
 
     if os.path.exists(model_name_or_path):
         bart_tokenizer = BartTokenizer.from_pretrained(model_name_or_path)

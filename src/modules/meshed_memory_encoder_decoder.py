@@ -25,7 +25,7 @@ class WordEmbeddings(nn.Module):
     def __init__(self, d_model, vocab):
         super(WordEmbeddings, self).__init__()
         self.d_model = d_model
-        model_name_or_path = os.path.join(f"/cluster/home/fnooralahzad/models/w2v/glove")
+        model_name_or_path = os.path.join(f"/opt/data/ARGON/containers/models/w2v/glove")
 
         if os.path.exists(model_name_or_path):
             embed_weight = np.load(os.path.join(model_name_or_path, 'w2v.npy'))
