@@ -101,6 +101,7 @@ class M2TrGenModel(pl.LightningModule):
     def validation_epoch_end(self, outputs):
         gths=[]
         reports = []
+        outputs = self.all_gather(outputs) if self.args.n_gpus >1 else outputs
         for x in outputs:
             gths.extend(x["gths"])
             reports.extend(x["reports"])
@@ -116,7 +117,8 @@ class M2TrGenModel(pl.LightningModule):
         for key, value in val_met.items():
             print('\tval_{:15s}: {}'.format(str(key), value))
 
-        self.log('monitor_metrics', monitor_metrics, on_step=False, on_epoch=True, prog_bar=True)
+        sync_dist = True if self.args.n_gpu > 1 else False
+        self.log('monitor_metrics', monitor_metrics, on_step=False, on_epoch=True, prog_bar=True, sync_dist=sync_dist)
 
     def test_step(self, batch, batch_idx):
         images_id, images, reports_ids, reports_masks = batch
@@ -138,6 +140,8 @@ class M2TrGenModel(pl.LightningModule):
         gths = []
         reports = []
         image_ids=[]
+
+        outputs = self.all_gather(outputs) if self.args.n_gpus >1 else outputs
 
         for x in outputs:
             gths.extend(x["gths"])

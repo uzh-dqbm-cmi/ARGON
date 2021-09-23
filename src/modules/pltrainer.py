@@ -24,6 +24,7 @@ class pltrain():
             mode="max",
         )
 
+        # accelerator="ddp"
         self.trainer = pl.Trainer(
             #gradient_clip_val=0.1,
             max_epochs=args.epochs, deterministic=True,

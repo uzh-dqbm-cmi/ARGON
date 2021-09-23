@@ -7,7 +7,7 @@
 import numpy as np
 from sklearn.decomposition import PCA
 
-from modules.pixelhop.saab import Saab
+from src.modules.pixelhop.saab import Saab
 
 
 class cwSaab():

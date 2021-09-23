@@ -6,7 +6,7 @@
 import numpy as np
 from sklearn.decomposition import PCA
 
-from modules.pixelhop.myPCA import myPCA
+from src.modules.pixelhop.myPCA import myPCA
 
 
 class Saab():
