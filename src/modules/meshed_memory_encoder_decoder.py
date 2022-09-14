@@ -114,6 +114,8 @@ class DecoderLayer(TransformerDecoderLayer):
 
         mesh = None
         memory=memory.permute(1,0,2,3)
+        ## new update!
+        if memory.shape[2]!=tgt.shape[1]: memory=memory.reshape(memory.shape[0],98,-1,memory.shape[3])
         for i in range(memory.shape[0]):
             if len(memory.shape) == 5:
                 tgt_stack = []
